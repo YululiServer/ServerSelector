@@ -1,0 +1,9 @@
+name: ServerSelector
+main: xyz.acrylicstyle.serverSelector.ServerSelector
+version: "1.0"
+api-version: "1.13"
+depend:
+  - TomeitoLib
+commands:
+  servers:
+    description: "open servers menu"
