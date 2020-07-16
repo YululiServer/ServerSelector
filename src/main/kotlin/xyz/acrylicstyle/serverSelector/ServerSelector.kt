@@ -38,6 +38,7 @@ class ServerSelector : JavaPlugin() {
         }
 
         fun reload() {
+            gui.clear()
             getConfig().reload()
             servers.clear()
             for (i in 0 until 54) {
@@ -46,7 +47,10 @@ class ServerSelector : JavaPlugin() {
                     if (!map.containsKey("server")
                         || !map.containsKey("name")
                         || !map.containsKey("material")
-                        || !map.containsKey("description")) continue
+                        || !map.containsKey("description")) {
+                        Log.warn("server, name, material, or description is missing @$i")
+                        return
+                    }
                     val server = (map["server"] ?: continue) as String
                     val name = (map["name"] ?: continue) as String
                     val material = map.getOrDefault("material", "STONE") as String
