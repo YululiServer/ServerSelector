@@ -9,11 +9,13 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import org.bukkit.inventory.ItemStack
+import org.bukkit.scheduler.BukkitRunnable
 import xyz.acrylicstyle.serverSelector.ServerSelector
+import xyz.acrylicstyle.serverSelector.locale.Locales
 import xyz.acrylicstyle.tomeito_api.utils.ReflectionUtil
 import java.util.UUID
 
-class ServerGui(uuid: UUID) : InventoryHolder, Listener {
+class ServerGui(val uuid: UUID) : InventoryHolder, Listener {
     private val locale: String
 
     init {
@@ -35,11 +37,31 @@ class ServerGui(uuid: UUID) : InventoryHolder, Listener {
             meta.displayName = ChatColor.translateAlternateColorCodes('&', server.name)
             val lore = server.description
             lore.add("")
-            lore.add(if (locale.toLowerCase() == "ja_jp") ChatColor.GREEN.toString() + "> クリックして接続" else ChatColor.GREEN.toString() + "> Click to connect")
+            lore.add(Locales.getLocale(locale).clickToConnect())
+            lore.add("")
+            lore.add(String.format(Locales.getLocale(locale).onlinePlayers(), ServerSelector.playerCount[server.server]))
             meta.lore = server.description
             item.itemMeta = meta
             inv.setItem(index, item)
+            ServerSelector.guiServers[uuid][index] = server
         }
+        object: BukkitRunnable() {
+            override fun run() {
+                inv.forEachIndexed { index, item ->
+                    ServerSelector.guiServers[uuid][index] ?: return@forEachIndexed
+                    val meta = item.itemMeta
+                    if (!meta.hasLore()) return@forEachIndexed
+                    @Suppress("UNCHECKED_CAST")
+                    val lore = meta.lore
+                    lore.removeAt(lore.size - 1)
+                    lore.add(String.format(Locales.getLocale(locale).onlinePlayers(), ServerSelector.playerCount[ServerSelector.guiServers[uuid][index]?.server]))
+                    meta.lore = lore
+                    item.itemMeta = meta
+                    inv.setItem(index, item)
+                }
+                inv.viewers.forEach { he -> (he as Player).updateInventory() }
+            }
+        }.runTaskTimer(ServerSelector.instance, 20, 20)
     }
 
     override fun getInventory(): Inventory = inv
